@@ -1,0 +1,25 @@
+{
+    "name": "@catwiki/backend",
+    "private": true,
+    "version": "0.0.1",
+    "description": "Awesome project developed with TypeORM.",
+    "devDependencies": {
+        "@types/express": "^4.17.9",
+        "@types/node": "^8.0.29",
+        "ts-node": "3.3.0",
+        "ts-node-dev": "^1.1.1",
+        "typescript": "3.3.3333"
+    },
+    "dependencies": {
+        "axios": "^0.21.0",
+        "cors": "^2.8.5",
+        "dotenv": "^8.2.0",
+        "express": "^4.17.1",
+        "reflect-metadata": "^0.1.10",
+        "sqlite3": "^5.0.0",
+        "typeorm": "0.2.29"
+    },
+    "scripts": {
+        "start": "ts-node-dev --respawn --transpile-only src/index.ts"
+    }
+}

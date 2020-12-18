@@ -1,0 +1,11 @@
+version: '2'
+services:
+    base:
+        image: node:14
+        volumes:
+            - .:/usr/src/
+        working_dir: /usr/src/
+    install:
+        extends:
+            service: base
+        command: yarn install

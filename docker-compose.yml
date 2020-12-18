@@ -1,0 +1,56 @@
+version: '3'
+
+services:
+    reverse-proxy:
+        image: traefik:v2.3
+        command: --api.insecure=true --providers.docker
+        ports:
+            - '80:80'
+            - '8080:8080'
+        volumes:
+            - /var/run/docker.sock:/var/run/docker.sock
+
+    whoami:
+        image: traefik/whoami
+        labels:
+            - 'traefik.http.routers.whoami.rule=Host(`whoami.docker.localhost`)'
+
+    sqlite3:
+        image: nouchka/sqlite3:latest
+        stdin_open: true
+        tty: true
+        ports:
+            - '9000:9000'
+        volumes:
+            - packages/backend/database.sqlite
+
+    backend:
+        image: node:14
+        command: yarn workspace @catwiki/backend start
+        ports:
+            - '127.0.0.1:3000:3000'
+        volumes:
+            - .:/srv/backend:rw
+        working_dir: /srv/backend
+        depends_on:
+            - sqlite3
+        env_file:
+            - packages/backend/.env
+        labels:
+            - 'traefik.enable=true'
+            - 'traefik.http.routers.backend.rule=Host(`catwiki.localhost`) && PathPrefix(`/api`)'
+
+    frontend:
+        image: node:14
+        command: yarn workspace @catwiki/frontend start
+        ports:
+            - '127.0.0.1:1337:1337'
+        volumes:
+            - .:/srv/frontend:rw
+        working_dir: /srv/frontend
+        depends_on:
+            - backend
+            - sqlite3
+        labels:
+            - 'traefik.enable=true'
+            - 'traefik.http.routers.frontend.rule=Host(`catwiki.localhost`)'

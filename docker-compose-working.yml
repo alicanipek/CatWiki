@@ -1,0 +1,63 @@
+version: '3'
+
+services:
+    traefik:
+        image: 'traefik:v2.3'
+        container_name: 'traefik'
+        command:
+            #- "--log.level=DEBUG"
+            - '--api.insecure=true'
+            - '--providers.docker=true'
+            - '--providers.docker.exposedbydefault=false'
+            - '--entrypoints.web.address=:80'
+        ports:
+            - '80:80'
+            - '8080:8080'
+            - '443:443'
+        volumes:
+            - '/var/run/docker.sock:/var/run/docker.sock:ro'
+
+    sqlite3:
+        image: nouchka/sqlite3:latest
+        stdin_open: true
+        tty: true
+        ports:
+            - '9000:9000'
+        volumes:
+            - packages/backend/database.sqlite
+
+    backend:
+        build: packages/backend
+        command: yarn workspace @catwiki/backend start
+        ports:
+            - '127.0.0.1:3000:3000'
+        volumes:
+            - .:/srv/backend:rw
+            - /srv/backend/node_modules
+        working_dir: /srv/backend
+        depends_on:
+            - sqlite3
+        env_file:
+            - packages/backend/.env
+        labels:
+            - 'traefik.enable=true'
+            - 'traefik.http.routers.backend.rule=Host(`catwiki.localhost`) && PathPrefix(`/api`)'
+            - 'traefik.http.routers.backend.entrypoints=web'
+
+    frontend:
+        build: packages/frontend
+        command: yarn workspace @catwiki/frontend start
+        ports:
+            - '127.0.0.1:1234:1234'
+            - '127.0.0.1:1235:1235'
+        volumes:
+            - .:/srv/frontend:rw
+            - /srv/frontend/node_modules
+        working_dir: /srv/frontend
+        depends_on:
+            - backend
+            - sqlite3
+        labels:
+            - 'traefik.enable=true'
+            - 'traefik.http.routers.frontend.rule=Host(`catwiki.localhost`)'
+            - 'traefik.http.routers.frontend.entrypoints=web'
